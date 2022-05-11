@@ -753,6 +753,8 @@ end
     η13 = view(𝓒.η15, els, ip) .* Visc_blk
     η23 = view(𝓒.η35, els, ip) .* Visc_blk
 
+    ηmax, ηmin = 1e25, 1e18
+    
     # C = 0.5; # Used instead of 'D' matrix in standard assembly
     C = 1 # Used instead of 'D' matrix in standard assembly
     indx = 1
@@ -765,8 +767,8 @@ end
                 # x-velocity (1st, 3th, 5th,... columns)
                 K_blk[k, indx] +=
                     ω[k] * (
-                        dNdx[k, i] * (η11[k] * dNdx[k, j] + C * η13[k] * dNdy[k, j]) +
-                        dNdy[k, i] * (η13[k] * dNdx[k, j] + C * η33[k] * dNdy[k, j])
+                        dNdx[k, i] * (applybounds(η11[k], ηmax, ηmin) * dNdx[k, j] + C * applybounds(η13[k], ηmax, ηmin) * dNdy[k, j]) +
+                        dNdy[k, i] * (applybounds(η13[k], ηmax, ηmin) * dNdx[k, j] + C * applybounds(η33[k], ηmax, ηmin) * dNdy[k, j])
                     )
             end
             indx += 1
@@ -774,8 +776,8 @@ end
                 # y-velocity equation (2nd, 4th, 6th,... rows of stiffness matrices)
                 K_blk[k, indx] +=
                     ω[k] * (
-                        dNdx[k, i] * (η12[k] * dNdy[k, j] + C * η13[k] * dNdx[k, j]) +
-                        dNdy[k, i] * (η23[k] * dNdy[k, j] + C * η33[k] * dNdx[k, j])
+                        dNdx[k, i] * (applybounds(η12[k], ηmax, ηmin) * dNdy[k, j] + C * applybounds(η13[k], ηmax, ηmin) * dNdx[k, j]) +
+                        dNdy[k, i] * (applybounds(η23[k], ηmax, ηmin) * dNdy[k, j] + C * applybounds(η33[k], ηmax, ηmin) * dNdx[k, j])
                     )
             end
             indx += 1
@@ -788,8 +790,8 @@ end
                     # x-velocity (1st, 3th, 5th,... columns)
                     K_blk[k, indx] +=
                         ω[k] * (
-                            dNdx[k, i] * (η13[k] * dNdx[k, j] + C * η33[k] * dNdy[k, j]) +
-                            dNdy[k, i] * (η12[k] * dNdx[k, j] + C * η23[k] * dNdy[k, j])
+                            dNdx[k, i] * (applybounds(η13[k], ηmax, ηmin) * dNdx[k, j] + C * applybounds(η33[k], ηmax, ηmin) * dNdy[k, j]) +
+                            dNdy[k, i] * (applybounds(η12[k], ηmax, ηmin) * dNdx[k, j] + C * applybounds(η23[k], ηmax, ηmin) * dNdy[k, j])
                         )
                 end
                 indx += 1
@@ -798,8 +800,8 @@ end
                 # y-velocity equation (2nd, 4th, 6th,... rows of stiffness matrices)
                 K_blk[k, indx] +=
                     ω[k] * (
-                        dNdx[k, i] * (η23[k] * dNdy[k, j] + C * η33[k] * dNdx[k, j]) +
-                        dNdy[k, i] * (η22[k] * dNdy[k, j] + C * η23[k] * dNdx[k, j])
+                        dNdx[k, i] * (applybounds(η23[k], ηmax, ηmin) * dNdy[k, j] + C * applybounds(η33[k], ηmax, ηmin) * dNdx[k, j]) +
+                        dNdy[k, i] * (applybounds(η22[k], ηmax, ηmin) * dNdy[k, j] + C * applybounds(η23[k], ηmax, ηmin) * dNdx[k, j])
                     )
             end
             indx += 1
