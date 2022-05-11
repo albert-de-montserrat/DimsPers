@@ -36,25 +36,25 @@ struct FiniteStrain{T} <: Healing
     destruction::FabricDestruction # ratio a1/a2 at which aggregate goes back to its anisotropic form
     isotropic_domain::IsotropicDomain # depth above which Ω is isotropic
 
-    function FiniteStrain(nel; nip=6, ϵ=1e3, r_iso=0)
+    function FiniteStrain(nel; nip=6, ϵ=1e3, annealing_rate=0, r_iso=0)
         # instantiate isotropic finite strain ellipsoid
         fse = [
             FiniteStrainEllipsoid(1.0, 0.0, 0.0, 1.0, 1.0, 1.0) for _ in 1:nel, _ in 1:nip
         ]
         # define active healing mechanism(s)
-        # if (annealing_rate != 0) && (ϵ != 0)
-        #     type = AnnealingFabricDestruction
+        if (annealing_rate != 0) && (ϵ != 0)
+            type = AnnealingFabricDestruction
 
-        # elseif (annealing_rate != 0) && (ϵ == 0)
-        #     type = AnnealingOnly
+        elseif (annealing_rate != 0) && (ϵ == 0)
+            type = AnnealingOnly
 
-        # elseif (annealing_rate == 0) && (ϵ != 0)
-        #     type = FabricDestructionOnly
+        elseif (annealing_rate == 0) && (ϵ != 0)
+            type = FabricDestructionOnly
 
-        # else
-        type = NoHealing
+        else
+            type = NoHealing
+        end
 
-        # end
         # create object
         return new{type}(
             fse,
