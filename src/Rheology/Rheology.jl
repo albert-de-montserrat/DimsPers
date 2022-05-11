@@ -65,15 +65,26 @@ struct Arrhenius{T} <: AbstractViscosity
     Ea::Float64 # Activation energy
     Va::Float64 # Activation volume
     T0::Float64 # Reference temperature
-    C::Float64 # Cohesion
+    C::Matrix{Float64} # Cohesion
     ϕ::Float64 # angle of friction
 
     function Arrhenius(
-        gr::Grid; C=30e6, ϕ=1, η0=5e20, Ea=100e3, Va=1e-6, T0=1600, R=8.314, type=Isotropic
+        gr::Grid, ipz; C=30e6, ϕ=1, η0=5e20, Ea=100e3, Va=1e-6, T0=1600, R=8.314, type=Isotropic
     )
-        C, ϕ, η0, R, Ea, Va, T0 = Float64.((C, ϕ, η0, R, Ea, Va, T0))
+        ϕ, η0, R, Ea, Va, T0 = Float64.((ϕ, η0, R, Ea, Va, T0))
+
+        Cip = fill(C, gr.nel, 7)
+        for i in eachindex(ipz) 
+            if ipz[i] > 6.351e6-660e3
+                @inbounds Cip[i] -= Cip[i]*rand()*0.1 
+            end
+        end
+
+        for i in axes(Cip,1 )
+            @inbounds Cip[i, 7] = ( Cip[i, 1] + Cip[i, 2] +Cip[i, 3] +Cip[i, 4] +Cip[i, 5] +Cip[i, 6])/6
+        end
         return new{type}(
-            similar(gr.x), Matrix{Float64}(undef, gr.nel, 7), η0, R, Ea, Va, T0, C, ϕ
+            similar(gr.x), similar(Cip), η0, R, Ea, Va, T0, Cip, ϕ
         )
     end
 end
@@ -374,9 +385,9 @@ function getviscosity!(η::Arrhenius{M}, T, P, εII, τII, e2n, r) where {M}
             ηTP = min(max(λ*getviscosity(η, T_ip, P_ip), 1e18), 1e25)
 
             # Plastic corrections
-            if (C > 0) && (ϕ > 0) && (εII_ip != 0.0)  # should be false only in the 1st time step or if C=0 and ϕ=0
+            if (C[iel, ip] > 0) && (ϕ > 0) && (εII_ip != 0.0)  # should be false only in the 1st time step or if C=0 and ϕ=0
                 # yield stress
-                τy = druckerPrager(P_ip, C*(1+rand()*0.05), ϕ)
+                τy = druckerPrager(P_ip, C[iel, ip], ϕ)
                 if τy < τII[iel, ip] 
                     # 'plastic viscosity'
                     ηy = 0.5 * τy / εII_ip
